@@ -41,6 +41,26 @@ int main() {
         close(fd);
         return err;
     }
-    while (1) {}
+    char buffer[2048]; //a memory buffer to catch the packet.
+    while (1) {
+        int byt= read(fd, buffer, sizeof(buffer)); //reading from your file descriptor (fd), into your buffer, up to the sizeof(buffer).
+        if (byt<0) { //read() returns the exact number of bytes it caught. Store that in an integer variable.
+            printf("read error\n");
+        }if (byt>0) {
+
+            /*If your read() function caught data (bytes > 0),
+             iterate through that buffer using a for loop.
+             Print every single byte in hexadecimal using printf("%02X ", (unsigned char)buffer[i]);*/
+
+            for (int i=0; i<byt; i++) {
+                printf("%02x", (unsigned char)buffer[i]); /*the char type is typically signed by default.
+                It holds values from -128 to 127. Network packets are raw binary. C program reads a byte like 11000000 (0xC0),
+                it sees the first bit is a 1 and thinks, this is a negative number! When we pass it to printf using %02x.
+                It pads the negative number with Fs to make it fit into a 32-bit integer, printing FFFFFFC0 instead of C0.*/
+
+            }
+            printf("\n");
+        }
+    }
     return 0;
 }
