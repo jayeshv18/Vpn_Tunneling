@@ -5,6 +5,8 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <arpa/inet.h> //This contains a function to easily translate raw hex IPs into human-readable strings like "10.0.0.1"
+#include <linux/ip.h> //This contains the iphdr struct blueprint
 int main() {
     int fd = open("/dev/net/tun", O_RDWR); //Open for Reading and Writing.
     if (fd < 0) {
@@ -47,6 +49,26 @@ int main() {
         if (byt<0) { //read() returns the exact number of bytes it caught. Store that in an integer variable.
             printf("read error\n");
         }if (byt>0) {
+//buffer is just a dumb array of 2048 raw bytes. The compiler doesn't know it's a network packet.
+            // Force the compiler to treat the raw byte array as an IP Header struct.
+            // This allows us to read specific packet fields by name instead of raw byte offsets.
+            struct iphdr *iph = (struct iphdr *)buffer; //iphdr is the Linux kernel's blueprint for an IP packet.
+            // Check the very first field of the IP header. If it's not 4 (IPv4), ignore it.
+            if (iph->version == 4) { //telling the compiler, Take this raw memory, lay the iphdr blueprint perfectly on top of it, and let me access the data using names instead of counting raw byte numbers."
+                printf("IPv4\n");
+                struct in_addr src, dest; //iph->saddr is the Source IP physically located inside the raw packet we just intercepted.
+                // Copy the raw 32-bit IP addresses from the intercepted packet into our structs.
+                // We use '->' because 'iph' is a pointer. We use '.' because 'src/dest' are direct structs.
+                src.s_addr = iph->saddr; //src.s_addr is the designated holding slot inside the in_addr struct.
+                dest.s_addr = iph->daddr;
+                // inet_ntoa translates the raw 32-bit integer into a human-readable string (e.g., "10.0.0.1").
+                // We print them sequentially to avoid C's static buffer overwrite trap.
+                printf("Captured IPv4 Packet - Src: %s\n", inet_ntoa(src)); //Internet Network to ASCII
+                printf("Captured IPv4 Packet - Dest: %s\n", inet_ntoa(dest));
+            }else {
+                // If it's IPv6 or garbage, skip the rest of the loop and catch the next packet.
+                continue;
+            }
 
             /*If your read() function caught data (bytes > 0),
              iterate through that buffer using a for loop.
