@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <arpa/inet.h> //This contains a function to easily translate raw hex IPs into human-readable strings like "10.0.0.1"
 #include <linux/ip.h> //This contains the iphdr struct blueprint
+#include <sys/socket.h> // socket definition
+#include <netinet/in.h> // network structures
 int main() {
     int fd = open("/dev/net/tun", O_RDWR); //Open for Reading and Writing.
     if (fd < 0) {
@@ -43,6 +45,25 @@ int main() {
         close(fd);
         return err;
     }
+    // Asks the OS kernel to allocate a network endpoint.
+    // AF_INET = IPv4. SOCK_DGRAM = UDP (Connectionless).
+    // Returns a raw file descriptor (soc) connected to the network stack.
+    int soc=socket(AF_INET, SOCK_DGRAM, 0);
+    if (soc<0) {
+        printf("unexpected error opening socket\n");
+    }
+    // The 'mailing label' blueprint required by the OS to route our UDP packet.
+    struct sockaddr_in server;
+    // Wipe the memory block clean to prevent garbage data from corrupting our routing label.
+    memset(&server, 0, sizeof(server));
+    // Set Address Family to Internet (IPv4). Tells the router to expect a standard IP address.
+    server.sin_family = AF_INET;
+    // Host-TO-Network-Short. Flips the byte order of the port number from your
+    // CPU's architecture (Little-Endian) to the standard Network architecture (Big-Endian).
+    server.sin_port = htons(5555);
+    // Crushes the human-readable string IP into a raw 32-bit integer for the network stack.
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+
     char buffer[2048]; //a memory buffer to catch the packet.
     while (1) {
         int byt= read(fd, buffer, sizeof(buffer)); //reading from your file descriptor (fd), into your buffer, up to the sizeof(buffer).
@@ -65,6 +86,10 @@ int main() {
                 // We print them sequentially to avoid C's static buffer overwrite trap.
                 printf("Captured IPv4 Packet - Src: %s\n", inet_ntoa(src)); //Internet Network to ASCII
                 printf("Captured IPv4 Packet - Dest: %s\n", inet_ntoa(dest));
+                // The execution command.
+                // Takes the exact number of intercepted bytes (byt) from our TUN memory (buffer),
+                // attaches our target mailing label (&server), and blasts it out the physical network card.
+                sendto(soc, buffer, byt, 0, (struct sockaddr *)&server, sizeof(server));
             }else {
                 // If it's IPv6 or garbage, skip the rest of the loop and catch the next packet.
                 continue;

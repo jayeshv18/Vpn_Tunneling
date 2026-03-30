@@ -1,8 +1,8 @@
 [
 {
   "directory": "/home/jay/CLionProjects/vpntunneling/cmake-build-debug",
-  "command": "/usr/bin/cc -g -std=gnu11 -fdiagnostics-color=always -o CMakeFiles/vpntunneling.dir/main.c.o -c /home/jay/CLionProjects/vpntunneling/main.c",
-  "file": "/home/jay/CLionProjects/vpntunneling/main.c",
-  "output": "/home/jay/CLionProjects/vpntunneling/cmake-build-debug/CMakeFiles/vpntunneling.dir/main.c.o"
+  "command": "/usr/bin/cc -g -std=gnu11 -fdiagnostics-color=always -o CMakeFiles/vpntunneling.dir/tunnel.c.o -c /home/jay/CLionProjects/vpntunneling/tunnel.c",
+  "file": "/home/jay/CLionProjects/vpntunneling/tunnel.c",
+  "output": "/home/jay/CLionProjects/vpntunneling/cmake-build-debug/CMakeFiles/vpntunneling.dir/tunnel.c.o"
 }
 ]
