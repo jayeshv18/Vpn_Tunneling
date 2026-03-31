@@ -120,7 +120,6 @@ int main(int argc, char *argv[]) {
                     printf("Captured IPv4 Packet - Src: %s\n", inet_ntoa(src));
                     printf("Captured IPv4 Packet - Dest: %s\n", inet_ntoa(dest));
 
-                    // --- PHASE 4: THE CRYPTOGRAPHER (Meat-Grinder) ---
                     // Iterate through every single byte of the intercepted packet.
                     for (int z = 0; z < byt; z++) {
                         // Apply Bitwise XOR encryption.
