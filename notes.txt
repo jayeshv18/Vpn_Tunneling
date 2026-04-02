@@ -1,0 +1,59 @@
+Part 1: The Core Logic (The "How")
+
+The program operates on a Linear Data Pipeline:
+1.  Allocation: Tell the Linux Kernel to carve out a slice of RAM and treat it like a Network Interface (`/dev/net/tun`).
+2.  The Hook: Use a File Descriptor (`fd`) to "catch" any packet the Kernel tries to send out of that interface.
+3.  The Cast: Treat that raw memory buffer as a C `struct` (the IP Header) so we can read the Source/Destination IPs.
+4.  The XOR Scramble: For every byte in the buffer, we perform `Byte ^ 'X'`. This flips the bits. If you do it again with the same `'X'`, the bits flip back to original. This is Symmetric Encryption.
+5.  Tunneling: Wrap that scrambled mess into a standard UDP packet and send it to a real IP address.
+
+Part 2: Keyword & Data Structure Glossary
+
+| int fd | File Descriptor | A "handle" or "ID" the OS gives us to talk to the TUN device. |
+| struct ifreq | Interface Request | The "Configuration Form" we fill out to tell the Kernel how to set up `tun0`. |
+| struct iphdr | IP Header Struct | The Linux blueprint for an IPv4 packet. We "overlay" this on our buffer to read IPs. |
+| struct sockaddr_in | Socket Address | The "Mailing Label" that holds the IP and Port of the VPN Server. |
+| AF_INET | Address Family | Tells the OS we are using IPv4. |
+| SOCK_DGRAM | Socket Datagram | Tells the OS we want UDP (Fast, no handshake) instead of TCP. |
+| IFF_TUN | Interface Flag | Tells the Kernel to create a Layer 3 (IP) device, not a Layer 2 (Ethernet) one. |
+| IFF_NO_PI | No Packet Info | Tells the Kernel: "Don't add extra headers. Give me the raw bytes." |
+| ^ (XOR) | Bitwise Operator | The "Magic Switch." It toggles bits. `A ^ B = C` and `C ^ B = A`. |
+
+Part 3: The Function Library 
+
+1. open("/dev/net/tun", O_RDWR)
+Action: Opens the "door" to the Linux Tunnel Driver.
+Logic: Returns an integer (`fd`). We use this integer in every other function to tell the OS *which* door we are talking through.
+
+2. ioctl(fd, TUNSETIFF, (void *)&ifr)
+Action: Input/Output Control.
+Logic: This is how we "Submit the Form" (`ifr`) to the Kernel. `TUNSETIFF` is the specific command that says "Create the Interface now."
+
+3. socket(AF_INET, SOCK_DGRAM, 0)
+Action: Creates a "Phone Line" for the internet.
+Logic: Since it's `SOCK_DGRAM`, it prepares a UDP socket. It returns another integer (`soc`).
+
+4. read(fd, buffer, sizeof(buffer))
+Action: Pulls data FROM the Kernel into our program.
+Logic: When you `ping 10.0.0.1`, the Kernel puts that packet into the `fd`. `read()` grabs it and puts it into our `char buffer[]` array.
+
+5. sendto(soc, buffer, len, 0, &server, addr_len)
+Action: Blasts the buffer out to the real world.
+Logic: It takes our XOR-encrypted buffer and sends it to the IP/Port stored in the `server` struct.
+
+6. recvfrom(soc, buffer, ...)
+Action: Catches a UDP packet coming FROM the internet.
+Logic: Used by the Server to catch the encrypted packets flying in from the Client.
+
+7. write(fd, buffer, len)
+Action: Pushes data BACK to the Kernel.
+Logic: Once the Server decrypts a packet, it uses `write()` to "inject" it into the system so the computer thinks it just received a normal packet.
+
+8. inet_ntoa(struct in_addr)
+Action: Network to ASCII.
+Logic: Translates raw 32-bit binary IPs (like `0x0100000A`) into human strings (like `10.0.0.1`).
+
+Part 4: Revision Logic Summary
+Client Logic: Read from TUN ➔ XOR Encrypt ➔ Send to UDP.
+Server Logic: Receive from UDP ➔ XOR Decrypt ➔ Write to TUN.
+The Trap: Both `read()` and `recvfrom()` are blocking. If the code is waiting for one, it can't do the other. This is why we need Multi-threading in the next version!
