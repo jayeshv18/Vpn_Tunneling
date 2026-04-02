@@ -1,0 +1,32 @@
+[ LOCAL MACHINE (Client) ]                               [ CLOUD VPS (Server) ]
++--------------------------------------+                 +--------------------------------------+
+|          1. Local Application        |                 |          8. Target Network           |
+|         (e.g., Browser, Ping)        |                 |             (Internet)               |
++------------------+-------------------+                 +------------------^-------------------+
+                   | (Raw IP Packet)                                        | (Raw IP Packet)
+                   v                                                        |
++------------------+-------------------+                 +------------------+-------------------+
+|          2. Linux Kernel             |                 |          7. Linux Kernel             |
+|          (Routing Table)             |                 |          (Routing Table)             |
++------------------+-------------------+                 +------------------^-------------------+
+                   | (Routes to tun1)                                       | (Injected to tun0)
+                   v                                                        |
++------------------+-------------------+                 +------------------+-------------------+
+|       3. Virtual Interface           |                 |       6. Virtual Interface           |
+|         [tun1: 10.0.0.2]             |                 |         [tun0: 10.0.0.1]             |
++------------------+-------------------+                 +------------------^-------------------+
+                   | read(fd, buffer)                                       | write(fd, buffer)
+                   v                                                        |
++--------------------------------------+                 +--------------------------------------+
+|       C-SENTRY CLIENT DAEMON         |                 |       C-SENTRY SERVER DAEMON         |
+|                                      |                 |                                      |
+|  [A] Parser: Casts to struct iphdr   |                 |  [C] Injector: write() to tun0       |
+|  [B] Encryptor: buffer[z] ^ 'X'      |                 |  [B] Decryptor: buffer[z] ^ 'X'      |
+|  [C] Transporter: sendto() UDP       |                 |  [A] Receiver: recvfrom() UDP        |
++------------------+-------------------+                 +------------------^-------------------+
+                   |                                                        |
+                   |                 [ PUBLIC INTERNET ]                    |
+                   |               +---------------------+                  |
+                   +=============> | Encrypted UDP Noise | =================+
+                                   |    (Port 5555)      |
+                                   +---------------------+
