@@ -1,4 +1,4 @@
-Part 1: The Core Logic (The "How")
+Part 1: The Core Logic 
 
 The program operates on a Linear Data Pipeline:
 1.  Allocation: Tell the Linux Kernel to carve out a slice of RAM and treat it like a Network Interface (`/dev/net/tun`).
