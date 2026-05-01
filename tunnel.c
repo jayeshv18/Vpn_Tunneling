@@ -13,7 +13,7 @@
 #include <netinet/in.h>  // Network structures. Provides the 'sockaddr_in' blueprint.
 
 // argc = Argument Count (how many words typed in terminal).
-// argv = Argument Vector (array of the actual words typed, e.g., ["./tunnel", "-s"]).
+// argv = Argument Vector (array of the actual words typed, ["./tunnel", "-s"]).
 int main(int argc, char *argv[]) {
 
     // Check if the user provided the required flag (-s or -c).
