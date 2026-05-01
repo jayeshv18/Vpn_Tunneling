@@ -1,6 +1,5 @@
 // Description: A bidirectional VPN daemon that intercepts raw IP packets from
 // the Linux kernel, encrypts them via XOR, and tunnels them over UDP.
-
 #include <stdio.h>       // Standard Input/Output. Provides printf() for terminal logging.
 #include <linux/if.h>    // Linux Network Interfaces. Provides the 'ifreq' struct blueprint.
 #include <linux/if_tun.h> // Linux TUN/TAP driver definitions. Provides the IFF_TUN macro.
@@ -13,7 +12,6 @@
 #include <sys/socket.h>  // Core socket definitions. Provides socket(), bind(), sendto(), recvfrom().
 #include <netinet/in.h>  // Network structures. Provides the 'sockaddr_in' blueprint.
 
-// main() is the entry point.
 // argc = Argument Count (how many words typed in terminal).
 // argv = Argument Vector (array of the actual words typed, e.g., ["./tunnel", "-s"]).
 int main(int argc, char *argv[]) {
